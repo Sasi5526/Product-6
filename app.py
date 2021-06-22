@@ -179,7 +179,7 @@ def login():
 def view():
     prod_name = str(request.args.get('prod')).upper()
     
-    if prod_name in prod_ranking_model['product_category'].unique():
+    if prod_name in prod_ranking_model['product_category']:
         prod_price = similar_prods(prod_name)
         return render_template('prod_view.html',prod=prod_name,price=prod_price,exists='y')
     else:
