@@ -1,3 +1,4 @@
+
 import pandas as pd
 import os
 from os  import getcwd
@@ -11,6 +12,7 @@ directory = getcwd()
 
 
 # # Import the required Pickle files
+
 
 
 prod_ranking_model = pickle.load(open(os.path.join(directory,'prod_ranking_model.pkl'),'rb'))
@@ -99,22 +101,22 @@ def recommend_prod_cust(cust_name):
         if similar_custs_corr.index[i] != cust_name:
             cust_top_sell_prods = cust_prod_ranking_model[cust_prod_ranking_model['user_id'] == similar_custs_corr.index[i]]
             cust_top_sell_prods = cust_top_sell_prods[['product_category','review_score','price']].reset_index(drop=True)
-            cust_top_sell_prods['rev_Corr'] = cust_top_sell_prods['review_score'] * similar_custs_corr.iloc[i]
+            cust_top_sell_prods['Qty_Corr'] = cust_top_sell_prods['review_score'] * similar_custs_corr.iloc[i]
             prod_by_similar_custs = pd.concat([cust_top_sell_prods,prod_by_similar_custs])
     
     # aggregate the Qty Correlation by Product
-    prod_by_similar_custs = prod_by_similar_custs.groupby('product_category').agg({'rev_Corr':'sum','price':'max'})
+    prod_by_similar_custs = prod_by_similar_custs.groupby('product_category').agg({'Qty_Corr':'sum','price':'max'})
     prod_by_similar_custs.reset_index(inplace=True)
     #print(prod_by_similar_custs.head(20))
     
     # ignore the products already purchased by the input customer
     # merge prod_by_similar_custs and customer purchased products and drop the rows with No_of_orders being Not Null
     input_cust_top_sell_prods = cust_prod_ranking_model[cust_prod_ranking_model['user_id'] == cust_name]
-    df_merge = pd.merge(prod_by_similar_custs,input_cust_top_sell_prods[['product_name','No_of_Orders']],how='left',on='product_category')
+    df_merge = pd.merge(prod_by_similar_custs,input_cust_top_sell_prods[['product_category','No_of_Orders']],how='left',on='product_category')
     prod_recommend_to_cust = df_merge[df_merge['No_of_Orders'].isnull()]
     
     # sort the dataframe on Qty_Corr
-    prod_recommend_to_cust = prod_recommend_to_cust.sort_values('rev_Corr',ascending=False)[['product_category','price']].head(10).reset_index(drop=True)
+    prod_recommend_to_cust = prod_recommend_to_cust.sort_values('Qty_Corr',ascending=False)[['product_category','price']].head(10).reset_index(drop=True)
     
     #print(prod_recommend_to_cust)
     
@@ -122,6 +124,7 @@ def recommend_prod_cust(cust_name):
 
 
 # # Similar Products to Display
+
 
 # This function performs the below functionality for the input product
 # - get the list of products with similar purchasing pattern and correlation coefficient
@@ -145,10 +148,9 @@ def similar_prods(prod_name):
     
     #print(similar_prods)
     
-    html_code_table(similar_prods,'Similar products of your selected product','similarprodtable','left')
+    html_code_table(similar_prods,'Customers who purchased this product also purchased these','similarprodtable','left')
     
     return prod_price
-
 
 
 @app.route("/")
@@ -179,7 +181,7 @@ def login():
 def view():
     prod_name = str(request.args.get('prod')).upper()
     
-    if prod_name in prod_ranking_model['product_category']:
+    if prod_name in prod_ranking_model['product_category'].unique():
         prod_price = similar_prods(prod_name)
         return render_template('prod_view.html',prod=prod_name,price=prod_price,exists='y')
     else:
@@ -188,3 +190,4 @@ def view():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
